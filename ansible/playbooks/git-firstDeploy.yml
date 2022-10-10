@@ -1,0 +1,67 @@
+- name: First Deploy of the repository code
+  hosts: jpv_app
+  become: true
+  tasks:
+  - name: Check git is installed
+    yum:
+     name: git
+     state: present
+     update_cache: true
+    become: true
+
+  - name: Create jpv directory
+    file:
+      path: /opt/jpv/
+      state: directory
+
+  - name: Copy the github privatekey on the remote machine
+    ansible.builtin.copy:
+      src: /opt/ansible/keys/github.pem
+      dest: /tmp/github.pem
+      remote_src: no
+      mode: u+rx,g-rwx,o-rwx
+
+  - name: Clone the github repository
+    shell: "GIT_SSH_COMMAND='ssh -i /tmp/github.pem' git clone git@github.com:weskhel/DevOps-Challenge.git /opt/jpv/"
+
+  - name: Change where is the application will looking for the database
+    lineinfile:
+      dest=/opt/jpv/jumia_phone_validator/validator-backend/src/main/resources/application.properties
+      regexp='^spring.datasource.url=jdbc:postgresql://localhost:5432/validator_backend'
+      line="spring.datasource.url=jdbc:postgresql://terraform-20221008183649154300000001.c3ychps5tsxx.us-east-1.rds.amazonaws.com:5432/jumia_phone_validator"
+      state=present
+      backup=yes
+
+  - name: Change database username 
+    lineinfile:
+      dest=/opt/jpv/jumia_phone_validator/validator-backend/src/main/resources/application.properties
+      regexp='^spring.datasource.username=root'
+      line="spring.datasource.username=jumia"
+      state=present
+      backup=yes
+  
+  - name: Change database username 
+    lineinfile:
+      dest=/opt/jpv/jumia_phone_validator/validator-backend/src/main/resources/application.properties
+      regexp='^spring.datasource.password=root'
+      line="spring.datasource.password=Kr*MSJGjEI.$4SQ"
+      state=present
+      backup=yes
+
+  - name: Ensure postgres client is instaled
+    yum:
+      name: postgresql
+      state: latest
+      update_cache: yes
+  - name: Post password for operation
+    shell: 'PGPASSWORD="Kr*MSJGjEI.$4SQ"'
+  - name: Restore database
+    shell: "export PGPASSWORD='Kr*MSJGjEI.$4SQ' && psql -h terraform-20221008183649154300000001.c3ychps5tsxx.us-east-1.rds.amazonaws.com  -p 5432 -d jumia_phone_validator -U jumia -f /opt/jpv/jumia_phone_validator/database/sample.sql"
+
+  - name: (Docker-Compose) run the compose file
+    shell: "cd /opt/jpv/jumia_phone_validator/ && docker-compose up -d"
+  - name: Testing if the backend is UP
+    shell: "curl -sSf http://localhost:8080 > /dev/null && echo '>>>>>>>backend is OK<<<<<<<'"
+  - name: Testing if the frontend is UP
+    shell: "curl -sSf http://localhost:8081 > /dev/null && echo '>>>>>>>frontend is OK<<<<<<<'"
+

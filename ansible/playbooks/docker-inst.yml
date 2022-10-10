@@ -1,0 +1,41 @@
+- name: "Install docker, docker-compose and enable Docker"
+  hosts: jpv_app
+  become: yes
+  tasks:
+    - name: Update all packages
+      yum:
+        name: '*'
+        state: latest
+        update_only: yes
+
+    - name: Ensure a list of yum packages are installed
+      yum:
+        name: "{{ packages }}"
+        state: latest
+        update_cache: yes
+      vars:
+        packages:
+        - python3-pip
+        - yum-utils
+        - device-mapper-persistent-data
+        - lvm2
+        - amazon-linux-extras
+
+    - name: Add extras repository
+      shell: yum-config-manager --enable extras
+
+    - name: Install docker-ce
+      shell: "amazon-linux-extras install docker=18.06.1 -y"
+
+    - name: Enable Docker CE service at startup
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Download docker-compose
+      shell: "wget https://github.com/docker/compose/releases/download/v2.11.2/docker-compose-linux-x86_64"
+    - name: moving docker-compose
+      shell: "mv docker-compose-linux* /usr/bin/docker-compose"
+    - name: permissioning docker-compose
+      shell: "chmod -v +x /usr/bin/docker-compose"

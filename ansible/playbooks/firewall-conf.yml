@@ -1,0 +1,26 @@
+- name: Firewall Instalation and Configuration
+  hosts: jpv_app
+  become: true
+  tasks:
+  - name: Check Firewalld
+    yum:
+     name: firewalld
+     state: present
+     update_cache: true
+    become: true
+
+  - name: Start FirewallD
+    shell: "systemctl start firewalld.service"
+    become: yes
+
+  - name: FirewallD Configuration
+    firewalld:
+     permanent: yes
+     immediate: yes
+     port: "{{item.port}}/{{item.pt}}"
+     state: enabled
+     zone: public
+    with_items:
+     - {port: "8081", pt: "tcp" }
+     - {port: "1337", pt: "tcp" }
+    become: yes

@@ -1,0 +1,5 @@
+[jpv_app]
+44.204.179.106 ansible_user=ec2_user ansible_ssh_private_key_file=/opt/DevOps-Challenge/automation/ansible/keys/jpv.pem ansible_port=1337
+
+[jvp_oldssh]
+44.204.179.106 ansible_user=ec2_user ansible_ssh_private_key_file=/opt/DevOps-Challenge/automation/ansible/keys/jpv.pem ansible_port=22
